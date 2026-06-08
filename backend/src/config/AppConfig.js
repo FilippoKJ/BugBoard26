@@ -9,6 +9,18 @@ export class AppConfig {
     this.databasePath = environment.DATABASE_PATH
       ? resolve(environment.DATABASE_PATH)
       : resolve(backendRoot, 'database', 'bugboard.sqlite');
+    this.demoUsers = [
+      {
+        email: environment.DEMO_ADMIN_EMAIL ?? 'admin@softengunina.it',
+        password: environment.DEMO_ADMIN_PASSWORD ?? 'Admin123!',
+        role: 'ADMIN'
+      },
+      {
+        email: environment.DEMO_USER_EMAIL ?? 'user@softengunina.it',
+        password: environment.DEMO_USER_PASSWORD ?? 'User123!',
+        role: 'USER'
+      }
+    ];
   }
 
   static parsePort(value) {
