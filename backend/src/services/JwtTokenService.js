@@ -27,4 +27,12 @@ export class JwtTokenService {
       }
     );
   }
+
+  verify(token) {
+    return jwt.verify(token, this.secret, {
+      algorithms: ['HS256'],
+      issuer: 'bugboard26-backend',
+      audience: 'bugboard26-frontend'
+    });
+  }
 }
