@@ -1,4 +1,4 @@
-import { hash } from 'bcryptjs';
+import { compare, hash } from 'bcryptjs';
 
 export class PasswordHasher {
   constructor(cost = 12) {
@@ -15,5 +15,17 @@ export class PasswordHasher {
     }
 
     return hash(plainTextPassword, this.cost);
+  }
+
+  async verify(plainTextPassword, passwordHash) {
+    if (typeof plainTextPassword !== 'string' || !plainTextPassword) {
+      return false;
+    }
+
+    if (typeof passwordHash !== 'string' || !passwordHash) {
+      return false;
+    }
+
+    return compare(plainTextPassword, passwordHash);
   }
 }

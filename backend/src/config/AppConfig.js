@@ -6,9 +6,18 @@ const backendRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export class AppConfig {
   constructor(environment = process.env) {
     this.port = AppConfig.parsePort(environment.PORT ?? '3000');
+    this.nodeEnvironment = environment.NODE_ENV ?? 'development';
     this.databasePath = environment.DATABASE_PATH
       ? resolve(environment.DATABASE_PATH)
       : resolve(backendRoot, 'database', 'bugboard.sqlite');
+    this.jwtSecret = environment.JWT_SECRET
+      ?? 'bugboard26-development-only-secret-change-before-production';
+    this.jwtExpiresIn = environment.JWT_EXPIRES_IN ?? '1h';
+
+    if (this.nodeEnvironment === 'production' && !environment.JWT_SECRET) {
+      throw new Error('JWT_SECRET is required in production');
+    }
+
     this.demoUsers = [
       {
         email: environment.DEMO_ADMIN_EMAIL ?? 'admin@softengunina.it',
