@@ -1,0 +1,17 @@
+{
+  "name": "bugboard26-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "REST backend for BugBoard26",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
