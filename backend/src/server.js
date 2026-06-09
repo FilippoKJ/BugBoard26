@@ -3,10 +3,12 @@ import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { AppConfig } from './config/AppConfig.js';
 import { Database } from './config/Database.js';
+import { IssueRepository } from './repositories/IssueRepository.js';
 import { UserRepository } from './repositories/UserRepository.js';
 import { AuthService } from './services/AuthService.js';
 import { DemoUserSeeder } from './services/DemoUserSeeder.js';
 import { JwtTokenService } from './services/JwtTokenService.js';
+import { IssueService } from './services/IssueService.js';
 import { PasswordHasher } from './services/PasswordHasher.js';
 import { UserService } from './services/UserService.js';
 
@@ -22,6 +24,7 @@ database.connect();
 database.initializeSchema();
 
 const userRepository = new UserRepository(database);
+const issueRepository = new IssueRepository(database);
 const passwordHasher = new PasswordHasher();
 const demoUserSeeder = new DemoUserSeeder(userRepository, passwordHasher);
 await demoUserSeeder.seed(config.demoUsers);
@@ -35,12 +38,14 @@ const authService = new AuthService(
   tokenService
 );
 const userService = new UserService(userRepository, passwordHasher);
+const issueService = new IssueService(issueRepository);
 
 const app = createApp({
   database,
   authService,
   tokenService,
-  userService
+  userService,
+  issueService
 });
 const server = app.listen(config.port, () => {
   console.log(`BugBoard26 backend listening on port ${config.port}`);
