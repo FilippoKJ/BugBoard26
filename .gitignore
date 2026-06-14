@@ -6,6 +6,10 @@ node_modules/
 *.log
 coverage/
 dist/
+target/
+.scannerwork/
+*.zip
+tmp/
 
 # Local SQLite runtime files
 backend/database/*.sqlite
