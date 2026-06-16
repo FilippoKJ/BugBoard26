@@ -1,5 +1,7 @@
 import express from 'express';
+import cors from 'cors';
 import { AuthController } from './controllers/AuthController.js';
+import { CommentController } from './controllers/CommentController.js';
 import { HealthController } from './controllers/HealthController.js';
 import { IssueController } from './controllers/IssueController.js';
 import { UserController } from './controllers/UserController.js';
@@ -16,7 +18,9 @@ export function createApp({
   authService,
   tokenService,
   userService,
-  issueService
+  issueService,
+  commentService,
+  corsOrigin = 'http://localhost:5173'
 }) {
   const app = express();
   const healthService = new HealthService(database);
@@ -24,14 +28,20 @@ export function createApp({
   const authController = new AuthController(authService);
   const userController = new UserController(userService);
   const issueController = new IssueController(issueService);
+  const commentController = new CommentController(commentService);
   const authenticate = createAuthenticationMiddleware(tokenService);
 
   app.disable('x-powered-by');
+  app.use(cors({ origin: corsOrigin, credentials: false }));
   app.use(express.json({ limit: '1mb' }));
   app.use('/api/health', createHealthRouter(healthController));
   app.use('/api/auth', createAuthRouter(authController));
   app.use('/api/users', createUserRouter(userController, authenticate));
-  app.use('/api/issues', createIssueRouter(issueController, authenticate));
+  app.use('/api/issues', createIssueRouter(
+    issueController,
+    commentController,
+    authenticate
+  ));
   app.use(notFoundHandler);
   app.use(errorHandler);
 
