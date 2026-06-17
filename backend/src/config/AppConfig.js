@@ -13,6 +13,7 @@ export class AppConfig {
     this.jwtSecret = environment.JWT_SECRET
       ?? 'bugboard26-development-only-secret-change-before-production';
     this.jwtExpiresIn = environment.JWT_EXPIRES_IN ?? '1h';
+    this.corsOrigin = environment.CORS_ORIGIN ?? 'http://localhost:5173';
 
     if (this.nodeEnvironment === 'production' && !environment.JWT_SECRET) {
       throw new Error('JWT_SECRET is required in production');
