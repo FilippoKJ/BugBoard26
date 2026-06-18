@@ -2,18 +2,27 @@ import { Issue } from '../entities/Issue.js';
 
 const issueProjection = `
   SELECT
-    id,
-    title,
-    description,
-    type,
-    priority,
-    status,
-    author_id AS authorId,
-    archived,
-    created_at AS createdAt,
-    updated_at AS updatedAt
+    issues.id,
+    issues.title,
+    issues.description,
+    issues.type,
+    issues.priority,
+    issues.status,
+    issues.author_id AS authorId,
+    users.email AS authorEmail,
+    issues.archived,
+    issues.created_at AS createdAt,
+    issues.updated_at AS updatedAt
   FROM issues
+  JOIN users ON users.id = issues.author_id
 `;
+
+const priorityOrder = `CASE issues.priority
+  WHEN 'CRITICAL' THEN 4
+  WHEN 'HIGH' THEN 3
+  WHEN 'MEDIUM' THEN 2
+  WHEN 'LOW' THEN 1
+END`;
 
 export class IssueRepository {
   constructor(database) {
@@ -56,10 +65,47 @@ export class IssueRepository {
 
   findById(id) {
     const row = this.connection
-      .prepare(`${issueProjection} WHERE id = ?`)
+      .prepare(`${issueProjection} WHERE issues.id = ?`)
       .get(id);
 
     return IssueRepository.toEntity(row);
+  }
+
+  findAll({ type, status, priority, archived = false, sortBy, sortOrder }) {
+    const conditions = ['issues.archived = ?'];
+    const parameters = [Number(archived)];
+
+    for (const [column, value] of [
+      ['issues.type', type],
+      ['issues.status', status],
+      ['issues.priority', priority]
+    ]) {
+      if (value) {
+        conditions.push(`${column} = ?`);
+        parameters.push(value);
+      }
+    }
+
+    const orderExpression = sortBy === 'priority'
+      ? priorityOrder
+      : 'issues.created_at';
+    const rows = this.connection.prepare(
+      `${issueProjection}
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY ${orderExpression} ${sortOrder}, issues.id ${sortOrder}`
+    ).all(...parameters);
+
+    return rows.map(IssueRepository.toEntity);
+  }
+
+  archive(id) {
+    const result = this.connection.prepare(
+      `UPDATE issues
+       SET archived = 1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ? AND archived = 0`
+    ).run(id);
+
+    return result.changes ? this.findById(id) : null;
   }
 
   count() {
