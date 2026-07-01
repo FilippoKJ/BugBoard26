@@ -1,0 +1,13 @@
+import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { Logo } from '../components/Logo.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
+
+export function LoginPage() {
+  const { session, login } = useAuth();
+  const [form, setForm] = useState({ email: 'user@softengunina.it', password: 'User123!' });
+  const [state, setState] = useState({ busy: false, error: null });
+  if (session) return <Navigate to="/issues" replace />;
+  async function submit(event) { event.preventDefault(); setState({ busy: true, error: null }); try { await login(form.email, form.password); } catch (error) { setState({ busy: false, error }); } }
+  return <main className="grid min-h-screen lg:grid-cols-2"><section className="flex items-center justify-center p-6 sm:p-12"><div className="w-full max-w-md"><Logo /><div className="my-10"><p className="mb-2 text-sm font-bold uppercase tracking-[0.2em] text-brand-600">Workspace del team</p><h1 className="text-4xl font-black tracking-tight">Bentornato.</h1><p className="mt-3 text-slate-600">Accedi per segnalare, discutere e seguire le issue del progetto.</p></div><form onSubmit={submit} className="space-y-4"><label><span className="label">Email</span><input className="field" type="email" autoComplete="username" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label><label><span className="label">Password</span><input className="field" type="password" autoComplete="current-password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></label>{state.error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{state.error.message}</p>}<button className="btn-primary w-full" disabled={state.busy}>{state.busy ? 'Accesso…' : 'Accedi'}</button></form><p className="mt-8 text-xs text-slate-500">Credenziali dimostrative precompilate. Nessun dato reale.</p></div></section><aside className="hidden overflow-hidden bg-ink p-12 text-white lg:flex lg:flex-col lg:justify-between"><p className="text-sm font-bold uppercase tracking-[0.3em] text-emerald-300">Collaborazione essenziale</p><div><blockquote className="max-w-xl text-4xl font-black leading-tight">“Rendere visibile il lavoro è il primo passo per migliorarlo.”</blockquote><div className="mt-12 grid grid-cols-3 gap-4 text-sm text-slate-300"><div><strong className="block text-3xl text-white">4</strong>tipi di issue</div><div><strong className="block text-3xl text-white">3</strong>stati chiari</div><div><strong className="block text-3xl text-white">1</strong>spazio condiviso</div></div></div></aside></main>;
+}
