@@ -1,0 +1,34 @@
+name: Verify project
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - name: Install and check backend
+        working-directory: backend
+        run: pnpm install --frozen-lockfile && pnpm run check
+      - name: Install and build frontend
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile && pnpm run build
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21, cache: maven }
+      - name: Start backend
+        working-directory: backend
+        env:
+          PORT: 3000
+          DATABASE_PATH: /tmp/bugboard26-ci.sqlite
+          JWT_SECRET: github-actions-secret-with-at-least-thirty-two-characters
+        run: nohup node src/server.js > /tmp/bugboard26.log 2>&1 &
+      - name: Wait for backend
+        run: for i in {1..30}; do curl -fsS http://localhost:3000/api/health && exit 0; sleep 1; done; exit 1
+      - name: Run JUnit API tests
+        working-directory: tests/junit
+        run: mvn -B -Dbugboard.baseUrl=http://localhost:3000/api test

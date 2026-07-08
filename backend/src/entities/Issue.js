@@ -15,6 +15,7 @@ export class Issue {
     priority = IssuePriority.MEDIUM,
     status = IssueStatus.TODO,
     authorId,
+    authorEmail = null,
     archived = false,
     createdAt = null,
     updatedAt = null
@@ -26,6 +27,7 @@ export class Issue {
     this.priority = priority;
     this.status = status;
     this.authorId = authorId;
+    this.authorEmail = authorEmail;
     this.archived = archived;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -82,6 +84,7 @@ export class Issue {
       priority: this.priority,
       status: this.status,
       authorId: this.authorId,
+      authorEmail: this.authorEmail,
       archived: this.archived,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt

@@ -1,0 +1,32 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_PATH: /data/bugboard.sqlite
+      JWT_SECRET: ${JWT_SECRET:-local-docker-secret-change-before-public-deployment}
+      CORS_ORIGIN: http://localhost:8080
+    volumes:
+      - bugboard-data:/data
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:3000/api
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  bugboard-data:

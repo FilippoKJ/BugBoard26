@@ -1,9 +1,7 @@
-import { Buffer } from 'node:buffer';
 import { isUserRole } from '../entities/UserRole.js';
 import { ValidationError } from '../errors/ValidationError.js';
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/;
+import { emailPattern, normalizeEmail } from '../validators/emailRules.js';
+import { isStrongPassword } from '../validators/passwordRules.js';
 
 export class CreateUserRequest {
   constructor(email, password, role) {
@@ -17,9 +15,7 @@ export class CreateUserRequest {
       throw new ValidationError('A JSON request body is required');
     }
 
-    const email = typeof body.email === 'string'
-      ? body.email.trim().toLowerCase()
-      : '';
+    const email = normalizeEmail(body.email);
     const password = typeof body.password === 'string' ? body.password : '';
     const role = typeof body.role === 'string' ? body.role.toUpperCase() : '';
 
@@ -28,9 +24,7 @@ export class CreateUserRequest {
     }
 
     if (
-      password.length < 8
-      || Buffer.byteLength(password, 'utf8') > 72
-      || !strongPasswordPattern.test(password)
+      !isStrongPassword(password)
     ) {
       throw new ValidationError(
         'Password must be 8-72 bytes and include uppercase, lowercase, number and symbol'
