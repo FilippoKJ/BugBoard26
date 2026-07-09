@@ -33,7 +33,7 @@ export function createApp({
 
   app.disable('x-powered-by');
   app.use(cors({ origin: corsOrigin, credentials: false }));
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({ limit: '5mb' }));
   app.use('/api/health', createHealthRouter(healthController));
   app.use('/api/auth', createAuthRouter(authController));
   app.use('/api/users', createUserRouter(userController, authenticate));

@@ -7,6 +7,7 @@ export function createIssueRouter(issueController, commentController, authentica
   router.post('/', authenticate, issueController.create);
   router.get('/', authenticate, issueController.list);
   router.get('/archived', authenticate, issueController.listArchived);
+  router.get('/:id/image', authenticate, issueController.getImage);
   router.get('/:id', authenticate, issueController.getById);
   router.patch(
     '/:id/archive',

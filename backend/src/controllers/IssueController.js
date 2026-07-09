@@ -15,7 +15,8 @@ export class IssueController {
         createIssueRequest.description,
         createIssueRequest.type,
         createIssueRequest.priority,
-        request.user.id
+        request.user.id,
+        createIssueRequest.image
       );
       response.status(201).json({ issue: issue.toObject() });
     } catch (error) {
@@ -47,6 +48,22 @@ export class IssueController {
     try {
       const issue = this.issueService.getIssue(parsePositiveId(request.params.id));
       response.status(200).json({ issue: issue.toObject() });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getImage = (request, response, next) => {
+    try {
+      const image = this.issueService.getIssueImage(
+        parsePositiveId(request.params.id)
+      );
+      response
+        .status(200)
+        .type(image.mimeType)
+        .set('Content-Disposition', `inline; filename="${encodeURIComponent(image.fileName)}"`)
+        .set('Cache-Control', 'private, max-age=3600')
+        .send(image.data);
     } catch (error) {
       next(error);
     }

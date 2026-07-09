@@ -6,13 +6,14 @@ export class IssueService {
     this.issueRepository = issueRepository;
   }
 
-  createIssue(title, description, type, priority, authorId) {
+  createIssue(title, description, type, priority, authorId, image = null) {
     return this.issueRepository.create({
       title,
       description,
       type,
       priority,
-      authorId
+      authorId,
+      image
     });
   }
 
@@ -30,6 +31,15 @@ export class IssueService {
       throw new NotFoundError('Issue');
     }
     return issue;
+  }
+
+  getIssueImage(id) {
+    this.getIssue(id);
+    const image = this.issueRepository.findImageByIssueId(id);
+    if (!image) {
+      throw new NotFoundError('Issue image');
+    }
+    return image;
   }
 
   archiveIssue(id) {
