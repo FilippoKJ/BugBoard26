@@ -12,9 +12,12 @@ const issueProjection = `
     users.email AS authorEmail,
     issues.archived,
     issues.created_at AS createdAt,
-    issues.updated_at AS updatedAt
+    issues.updated_at AS updatedAt,
+    issue_images.file_name AS imageFileName,
+    issue_images.mime_type AS imageMimeType
   FROM issues
   JOIN users ON users.id = issues.author_id
+  LEFT JOIN issue_images ON issue_images.issue_id = issues.id
 `;
 
 const priorityOrder = `CASE issues.priority
@@ -30,7 +33,7 @@ export class IssueRepository {
     this.connection = database.connection;
   }
 
-  create({ title, description, type, priority, authorId }) {
+  create({ title, description, type, priority, authorId, image }) {
     const issue = new Issue({
       title,
       description,
@@ -38,8 +41,9 @@ export class IssueRepository {
       priority,
       authorId
     });
-    const result = this.connection
-      .prepare(
+    this.connection.exec('BEGIN');
+    try {
+      const result = this.connection.prepare(
         `INSERT INTO issues (
           title,
           description,
@@ -49,8 +53,7 @@ export class IssueRepository {
           author_id,
           archived
         ) VALUES (?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(
+      ).run(
         issue.title,
         issue.description,
         issue.type,
@@ -60,7 +63,20 @@ export class IssueRepository {
         Number(issue.archived)
       );
 
-    return this.findById(Number(result.lastInsertRowid));
+      const issueId = Number(result.lastInsertRowid);
+      if (image) {
+        this.connection.prepare(
+          `INSERT INTO issue_images (issue_id, file_name, mime_type, data)
+           VALUES (?, ?, ?, ?)`
+        ).run(issueId, image.fileName, image.mimeType, image.data);
+      }
+
+      this.connection.exec('COMMIT');
+      return this.findById(issueId);
+    } catch (error) {
+      this.connection.exec('ROLLBACK');
+      throw error;
+    }
   }
 
   findById(id) {
@@ -108,6 +124,14 @@ export class IssueRepository {
     return result.changes ? this.findById(id) : null;
   }
 
+  findImageByIssueId(id) {
+    return this.connection.prepare(
+      `SELECT file_name AS fileName, mime_type AS mimeType, data
+       FROM issue_images
+       WHERE issue_id = ?`
+    ).get(id) ?? null;
+  }
+
   count() {
     return this.connection.prepare('SELECT COUNT(*) AS count FROM issues').get().count;
   }
@@ -119,6 +143,9 @@ export class IssueRepository {
 
     return new Issue({
       ...row,
+      image: row.imageFileName
+        ? { fileName: row.imageFileName, mimeType: row.imageMimeType }
+        : null,
       archived: Boolean(row.archived)
     });
   }

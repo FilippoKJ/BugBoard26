@@ -5,12 +5,26 @@ import {
 } from '../entities/IssueValues.js';
 import { ValidationError } from '../errors/ValidationError.js';
 
+const MAX_IMAGE_SIZE = 3 * 1024 * 1024;
+const supportedImageSignatures = {
+  'image/png': (data) => data.subarray(0, 8).equals(
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  ),
+  'image/jpeg': (data) => data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff,
+  'image/webp': (data) => data.subarray(0, 4).toString('ascii') === 'RIFF'
+    && data.subarray(8, 12).toString('ascii') === 'WEBP',
+  'image/gif': (data) => ['GIF87a', 'GIF89a'].includes(
+    data.subarray(0, 6).toString('ascii')
+  )
+};
+
 export class CreateIssueRequest {
-  constructor(title, description, type, priority) {
+  constructor(title, description, type, priority, image) {
     this.title = title;
     this.description = description;
     this.type = type;
     this.priority = priority;
+    this.image = image;
   }
 
   static from(body) {
@@ -54,6 +68,55 @@ export class CreateIssueRequest {
       );
     }
 
-    return new CreateIssueRequest(title, description, type, priority);
+    return new CreateIssueRequest(
+      title,
+      description,
+      type,
+      priority,
+      CreateIssueRequest.parseImage(body.image)
+    );
+  }
+
+  static parseImage(image) {
+    if (image === undefined || image === null) {
+      return null;
+    }
+    if (typeof image !== 'object' || Array.isArray(image)) {
+      throw new ValidationError('Image must be an object');
+    }
+
+    const fileName = typeof image.fileName === 'string'
+      ? image.fileName.trim()
+      : '';
+    const mimeType = typeof image.mimeType === 'string'
+      ? image.mimeType.toLowerCase()
+      : '';
+    const encodedData = typeof image.data === 'string'
+      ? image.data.replace(/\s/g, '')
+      : '';
+
+    if (!fileName || fileName.length > 255) {
+      throw new ValidationError('Image file name must contain 1 to 255 characters');
+    }
+    if (!Object.hasOwn(supportedImageSignatures, mimeType)) {
+      throw new ValidationError('Image must be PNG, JPEG, WebP or GIF');
+    }
+    if (!encodedData || !/^[A-Za-z0-9+/]+={0,2}$/.test(encodedData)) {
+      throw new ValidationError('Image data must be valid Base64');
+    }
+
+    const data = Buffer.from(encodedData, 'base64');
+    const canonicalData = data.toString('base64').replace(/=+$/, '');
+    if (canonicalData !== encodedData.replace(/=+$/, '')) {
+      throw new ValidationError('Image data must be valid Base64');
+    }
+    if (!data.length || data.length > MAX_IMAGE_SIZE) {
+      throw new ValidationError('Image must not exceed 3 MB');
+    }
+    if (!supportedImageSignatures[mimeType](data)) {
+      throw new ValidationError('Image content does not match its declared format');
+    }
+
+    return { fileName, mimeType, data };
   }
 }

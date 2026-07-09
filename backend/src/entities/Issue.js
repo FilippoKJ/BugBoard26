@@ -16,6 +16,7 @@ export class Issue {
     status = IssueStatus.TODO,
     authorId,
     authorEmail = null,
+    image = null,
     archived = false,
     createdAt = null,
     updatedAt = null
@@ -28,6 +29,7 @@ export class Issue {
     this.status = status;
     this.authorId = authorId;
     this.authorEmail = authorEmail;
+    this.image = image;
     this.archived = archived;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -85,6 +87,7 @@ export class Issue {
       status: this.status,
       authorId: this.authorId,
       authorEmail: this.authorEmail,
+      image: this.image,
       archived: this.archived,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt

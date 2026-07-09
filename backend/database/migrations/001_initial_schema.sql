@@ -36,6 +36,17 @@ CREATE TABLE IF NOT EXISTS comments (
     FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE RESTRICT
 );
 
+CREATE TABLE IF NOT EXISTS issue_images (
+    issue_id INTEGER PRIMARY KEY,
+    file_name TEXT NOT NULL,
+    mime_type TEXT NOT NULL CHECK (
+        mime_type IN ('image/png', 'image/jpeg', 'image/webp', 'image/gif')
+    ),
+    data BLOB NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_issues_archived ON issues(archived);
 CREATE INDEX IF NOT EXISTS idx_issues_filters
     ON issues(type, status, priority);
