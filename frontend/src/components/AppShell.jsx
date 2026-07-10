@@ -18,7 +18,7 @@ export function AppShell() {
           <Logo />
           <nav className="hidden items-center gap-1 md:flex" aria-label="Navigazione principale">
             <NavLink to="/issues" className={navClass}>Issue</NavLink>
-            {isAdmin && <NavLink to="/archived" className={navClass}>Archivio</NavLink>}
+            <NavLink to="/archived" className={navClass}>Archivio</NavLink>
             {isAdmin && <NavLink to="/users" className={navClass}>Utenti</NavLink>}
           </nav>
           <div className="flex items-center gap-3">

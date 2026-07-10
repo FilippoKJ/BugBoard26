@@ -9,5 +9,5 @@ import { NotFoundPage } from './pages/NotFoundPage.jsx';
 import { UserManagementPage } from './pages/UserManagementPage.jsx';
 
 export function App() {
-  return <Routes><Route path="/login" element={<LoginPage />} /><Route element={<ProtectedRoute />}><Route element={<AppShell />}><Route index element={<Navigate to="/issues" replace />} /><Route path="/issues" element={<IssueListPage />} /><Route path="/issues/:id" element={<IssueDetailPage />} /><Route element={<ProtectedRoute role="ADMIN" />}><Route path="/archived" element={<ArchivedIssuesPage />} /><Route path="/users" element={<UserManagementPage />} /></Route></Route></Route><Route path="*" element={<NotFoundPage />} /></Routes>;
+  return <Routes><Route path="/login" element={<LoginPage />} /><Route element={<ProtectedRoute />}><Route element={<AppShell />}><Route index element={<Navigate to="/issues" replace />} /><Route path="/issues" element={<IssueListPage />} /><Route path="/issues/:id" element={<IssueDetailPage />} /><Route path="/archived" element={<ArchivedIssuesPage />} /><Route element={<ProtectedRoute role="ADMIN" />}><Route path="/users" element={<UserManagementPage />} /></Route></Route></Route><Route path="*" element={<NotFoundPage />} /></Routes>;
 }
