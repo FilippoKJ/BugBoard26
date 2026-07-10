@@ -16,11 +16,32 @@ export function IssueDetailPage() {
   useDocumentTitle('Dettaglio issue');
   const { id } = useParams(); const navigate = useNavigate(); const { client, session } = useAuth(); const api = useMemo(() => createIssueApi(client), [client]);
   const [issue, setIssue] = useState(null); const [comments, setComments] = useState([]); const [error, setError] = useState(null); const [loading, setLoading] = useState(true);
+  const [imageUrl, setImageUrl] = useState(null);
   const load = useCallback(async () => { setLoading(true); setError(null); try { const [issueResult, commentResult] = await Promise.all([api.getById(id), api.listComments(id)]); setIssue(issueResult.issue); setComments(commentResult.comments); } catch (caught) { setError(caught); } finally { setLoading(false); } }, [api, id]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (!issue?.image) {
+      setImageUrl(null);
+      return undefined;
+    }
+    let active = true;
+    let objectUrl = null;
+    api.getImage(id).then((blob) => {
+      objectUrl = URL.createObjectURL(blob);
+      if (active) {
+        setImageUrl(objectUrl);
+      } else {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }).catch(setError);
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [api, id, issue?.image]);
   async function addComment(text) { const result = await api.addComment(id, text); setComments((items) => [...items, result.comment]); }
   async function archive() { await api.archive(id); navigate('/archived'); }
   if (loading) return <LoadingState label="Apertura issue…" />;
   if (error || !issue) return <ErrorBanner error={error ?? new Error('Issue non disponibile')} />;
-  return <><Link to={issue.archived ? '/archived' : '/issues'} className="mb-5 inline-block text-sm font-bold text-brand-700">← Torna alla lista</Link><div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]"><section className="panel"><div className="mb-5 flex flex-wrap items-center gap-2"><span className="text-sm font-black text-brand-700">#{issue.id}</span><IssueBadge value={issue.type} label={issueTypeLabels[issue.type]} /><IssueBadge value={issue.status} label={statusLabels[issue.status]} /><IssueBadge value={issue.priority} label={priorityLabels[issue.priority]} /></div><h1 className="text-3xl font-black leading-tight">{issue.title}</h1><p className="mt-5 whitespace-pre-wrap leading-7 text-slate-700">{issue.description}</p><dl className="mt-8 grid gap-4 border-t border-slate-100 pt-5 text-sm sm:grid-cols-2"><div><dt className="text-slate-500">Autore</dt><dd className="font-semibold">{issue.authorEmail}</dd></div><div><dt className="text-slate-500">Creata</dt><dd className="font-semibold">{formatDate(issue.createdAt)}</dd></div></dl>{session.user.role === 'ADMIN' && !issue.archived && <div className="mt-6"><ArchiveButton onArchive={archive} /></div>}</section><aside className="panel h-fit"><h2 className="mb-4 text-xl font-extrabold">Discussione <span className="text-slate-400">{comments.length}</span></h2><CommentList comments={comments} /><div className="mt-5 border-t border-slate-100 pt-5"><CommentForm onSubmit={addComment} disabled={issue.archived} /></div></aside></div></>;
+  return <><Link to={issue.archived ? '/archived' : '/issues'} className="mb-5 inline-block text-sm font-bold text-brand-700">← Torna alla lista</Link><div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]"><section className="panel"><div className="mb-5 flex flex-wrap items-center gap-2"><span className="text-sm font-black text-brand-700">#{issue.id}</span><IssueBadge value={issue.type} label={issueTypeLabels[issue.type]} /><IssueBadge value={issue.status} label={statusLabels[issue.status]} /><IssueBadge value={issue.priority} label={priorityLabels[issue.priority]} /></div><h1 className="text-3xl font-black leading-tight">{issue.title}</h1><p className="mt-5 whitespace-pre-wrap leading-7 text-slate-700">{issue.description}</p>{imageUrl && <figure className="mt-6"><img className="max-h-[32rem] w-full rounded-xl border border-slate-200 bg-slate-50 object-contain" src={imageUrl} alt={`Allegato: ${issue.image.fileName}`} /><figcaption className="mt-2 text-xs text-slate-500">{issue.image.fileName}</figcaption></figure>}<dl className="mt-8 grid gap-4 border-t border-slate-100 pt-5 text-sm sm:grid-cols-2"><div><dt className="text-slate-500">Autore</dt><dd className="font-semibold">{issue.authorEmail}</dd></div><div><dt className="text-slate-500">Creata</dt><dd className="font-semibold">{formatDate(issue.createdAt)}</dd></div></dl>{session.user.role === 'ADMIN' && !issue.archived && <div className="mt-6"><ArchiveButton onArchive={archive} /></div>}</section><aside className="panel h-fit"><h2 className="mb-4 text-xl font-extrabold">Discussione <span className="text-slate-400">{comments.length}</span></h2><CommentList comments={comments} /><div className="mt-5 border-t border-slate-100 pt-5"><CommentForm onSubmit={addComment} disabled={issue.archived} /></div></aside></div></>;
 }

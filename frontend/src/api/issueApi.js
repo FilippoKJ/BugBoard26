@@ -12,6 +12,7 @@ export function createIssueApi(client) {
     list: (filters = {}) => client.get(`/issues${toQueryString(filters)}`),
     listArchived: (filters = {}) => client.get(`/issues/archived${toQueryString(filters)}`),
     getById: (id) => client.get(`/issues/${id}`),
+    getImage: (id) => client.getBlob(`/issues/${id}/image`),
     create: (issue) => client.post('/issues', issue),
     archive: (id) => client.patch(`/issues/${id}/archive`),
     listComments: (id) => client.get(`/issues/${id}/comments`),

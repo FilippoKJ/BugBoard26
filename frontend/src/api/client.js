@@ -31,6 +31,24 @@ export class ApiClient {
   }
 
   get(path) { return this.request(path); }
+  async getBlob(path) {
+    const token = this.getToken();
+    const response = await fetch(`${baseUrl}${path}`, {
+      headers: {
+        Accept: 'image/*',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      }
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new ApiError(
+        payload.error?.message ?? 'The server could not load the image',
+        response.status,
+        payload.error?.code
+      );
+    }
+    return response.blob();
+  }
   post(path, body) { return this.request(path, { method: 'POST', body: JSON.stringify(body) }); }
   patch(path, body = {}) { return this.request(path, { method: 'PATCH', body: JSON.stringify(body) }); }
 }
