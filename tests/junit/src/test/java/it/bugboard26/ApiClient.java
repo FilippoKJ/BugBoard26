@@ -18,6 +18,22 @@ final class ApiClient {
   }
 
   ApiResponse get(String path, String token) { return send("GET", path, token, null); }
+  BinaryApiResponse getBinary(String path, String token) {
+    var builder = HttpRequest.newBuilder(URI.create(baseUrl + path)).header("Accept", "image/*");
+    if (token != null) builder.header("Authorization", "Bearer " + token);
+    try {
+      var response = http.send(builder.GET().build(), HttpResponse.BodyHandlers.ofByteArray());
+      return new BinaryApiResponse(
+        response.statusCode(),
+        response.headers().firstValue("Content-Type").orElse(""),
+        response.body()
+      );
+    } catch (IOException exception) {
+      throw new IllegalStateException("Backend not reachable at " + baseUrl, exception);
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt(); throw new IllegalStateException(exception);
+    }
+  }
   ApiResponse post(String path, String token, JsonNode body) { return send("POST", path, token, body); }
   ApiResponse patch(String path, String token, JsonNode body) { return send("PATCH", path, token, body); }
 

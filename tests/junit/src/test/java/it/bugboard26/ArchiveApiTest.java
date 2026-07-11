@@ -19,6 +19,7 @@ class ArchiveApiTest {
     assertEquals(200, archived.status()); assertTrue(archived.body().path("issue").path("archived").asBoolean());
     var active = api.get("/issues", admin).body().path("issues"); var archive = api.get("/issues/archived", admin).body().path("issues");
     assertFalse(containsId(active, id)); assertTrue(containsId(archive, id));
+    assertTrue(containsId(api.get("/issues/archived", user).body().path("issues"), id));
     assertEquals(1, api.get("/issues/" + id + "/comments", admin).body().path("comments").size());
   }
 
