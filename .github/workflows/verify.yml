@@ -26,7 +26,8 @@ jobs:
           PORT: 3000
           DATABASE_PATH: /tmp/bugboard26-ci.sqlite
           JWT_SECRET: github-actions-secret-with-at-least-thirty-two-characters
-        run: nohup node src/server.js > /tmp/bugboard26.log 2>&1 &
+        run: |
+          nohup node src/server.js > /tmp/bugboard26.log 2>&1 &
       - name: Wait for backend
         run: for i in {1..30}; do curl -fsS http://localhost:3000/api/health && exit 0; sleep 1; done; exit 1
       - name: Run JUnit API tests
