@@ -7,13 +7,17 @@ class AuthenticationApiTest {
   private final ApiClient api = new ApiClient();
 
   @Test void validCredentialsReturnTokenAndSafeUser() {
-    var response = api.post("/auth/login", null, api.json("{\"email\":\"user@softengunina.it\",\"password\":\"User123!\"}"));
+    var response = api.post("/auth/login", null, api.json("""
+      {"email":"%s","password":"%s"}
+      """.formatted(TestAccounts.USER_EMAIL, TestAccounts.USER_PASSWORD)));
     assertEquals(200, response.status()); assertFalse(response.body().path("token").asText().isBlank());
     assertEquals("USER", response.body().path("user").path("role").asText()); assertFalse(response.body().path("user").has("passwordHash"));
   }
 
   @Test void wrongPasswordUsesGenericError() {
-    var response = api.post("/auth/login", null, api.json("{\"email\":\"user@softengunina.it\",\"password\":\"wrong\"}"));
+    var response = api.post("/auth/login", null, api.json("""
+      {"email":"%s","password":"wrong"}
+      """.formatted(TestAccounts.USER_EMAIL)));
     assertEquals(401, response.status()); assertEquals("INVALID_CREDENTIALS", response.body().path("error").path("code").asText());
   }
 

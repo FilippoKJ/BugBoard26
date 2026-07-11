@@ -1,6 +1,6 @@
 import { AuthenticationError } from '../errors/AuthenticationError.js';
 
-const DUMMY_PASSWORD_HASH =
+const NONEXISTENT_USER_HASH =
   '$2b$12$htrT6FxNF7lSxZOY5j5u7uSPNovAWjWAvsOyZLCSpyZRaI6vHiyRu';
 
 export class AuthService {
@@ -14,7 +14,7 @@ export class AuthService {
     const user = this.userRepository.findByEmail(email);
     const passwordMatches = await this.passwordHasher.verify(
       password,
-      user?.passwordHash ?? DUMMY_PASSWORD_HASH
+      user?.passwordHash ?? NONEXISTENT_USER_HASH
     );
 
     if (!user || !passwordMatches) {

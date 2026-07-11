@@ -9,6 +9,11 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      DEMO_ADMIN_EMAIL: admin@softengunina.it
+      DEMO_ADMIN_PASSWORD: CI-${{ github.run_id }}-Admin-Aa1!
+      DEMO_USER_EMAIL: user@softengunina.it
+      DEMO_USER_PASSWORD: CI-${{ github.run_id }}-User-Aa1!
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:

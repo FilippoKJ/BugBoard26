@@ -7,6 +7,10 @@ services:
       DATABASE_PATH: /data/bugboard.sqlite
       JWT_SECRET: ${JWT_SECRET:-local-docker-secret-change-before-public-deployment}
       CORS_ORIGIN: http://localhost:8080
+      DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:-}
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-}
+      DEMO_USER_EMAIL: ${DEMO_USER_EMAIL:-}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-}
     volumes:
       - bugboard-data:/data
     ports:

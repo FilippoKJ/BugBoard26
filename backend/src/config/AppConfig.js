@@ -20,17 +20,9 @@ export class AppConfig {
     }
 
     this.demoUsers = [
-      {
-        email: environment.DEMO_ADMIN_EMAIL ?? 'admin@softengunina.it',
-        password: environment.DEMO_ADMIN_PASSWORD ?? 'Admin123!',
-        role: 'ADMIN'
-      },
-      {
-        email: environment.DEMO_USER_EMAIL ?? 'user@softengunina.it',
-        password: environment.DEMO_USER_PASSWORD ?? 'User123!',
-        role: 'USER'
-      }
-    ];
+      AppConfig.parseDemoUser(environment, 'ADMIN'),
+      AppConfig.parseDemoUser(environment, 'USER')
+    ].filter(Boolean);
   }
 
   static parsePort(value) {
@@ -41,5 +33,22 @@ export class AppConfig {
     }
 
     return port;
+  }
+
+  static parseDemoUser(environment, role) {
+    const email = environment[`DEMO_${role}_EMAIL`]?.trim() ?? '';
+    const password = environment[`DEMO_${role}_PASSWORD`] ?? '';
+
+    if (!email && !password) {
+      return null;
+    }
+
+    if (!email || !password) {
+      throw new Error(
+        `DEMO_${role}_EMAIL and DEMO_${role}_PASSWORD must be configured together`
+      );
+    }
+
+    return { email, password, role };
   }
 }
