@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { AuthController } from './controllers/AuthController.js';
 import { CommentController } from './controllers/CommentController.js';
 import { HealthController } from './controllers/HealthController.js';
@@ -32,6 +33,7 @@ export function createApp({
   const authenticate = createAuthenticationMiddleware(tokenService);
 
   app.disable('x-powered-by');
+  app.use(helmet());
   app.use(cors({ origin: corsOrigin, credentials: false }));
   app.use(express.json({ limit: '5mb' }));
   app.use('/api/health', createHealthRouter(healthController));
