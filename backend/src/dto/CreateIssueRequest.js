@@ -18,6 +18,51 @@ const supportedImageSignatures = {
   )
 };
 
+function isBase64Symbol(character) {
+  const code = character.codePointAt(0);
+  return (code >= 0x41 && code <= 0x5a)
+    || (code >= 0x61 && code <= 0x7a)
+    || (code >= 0x30 && code <= 0x39)
+    || character === '+'
+    || character === '/';
+}
+
+function isValidBase64(value) {
+  if (!value || value.length % 4 === 1) {
+    return false;
+  }
+
+  const firstPadding = value.indexOf('=');
+  const contentEnd = firstPadding === -1 ? value.length : firstPadding;
+  const paddingLength = value.length - contentEnd;
+
+  if (paddingLength > 2 || (paddingLength > 0 && value.length % 4 !== 0)) {
+    return false;
+  }
+
+  for (let index = 0; index < contentEnd; index += 1) {
+    if (!isBase64Symbol(value[index])) {
+      return false;
+    }
+  }
+
+  for (let index = contentEnd; index < value.length; index += 1) {
+    if (value[index] !== '=') {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function removeBase64Padding(value) {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '=') {
+    end -= 1;
+  }
+  return value.slice(0, end);
+}
+
 export class CreateIssueRequest {
   constructor(title, description, type, priority, image) {
     this.title = title;
@@ -101,13 +146,13 @@ export class CreateIssueRequest {
     if (!Object.hasOwn(supportedImageSignatures, mimeType)) {
       throw new ValidationError('Image must be PNG, JPEG, WebP or GIF');
     }
-    if (!encodedData || !/^[A-Za-z0-9+/]+={0,2}$/.test(encodedData)) {
+    if (!isValidBase64(encodedData)) {
       throw new ValidationError('Image data must be valid Base64');
     }
 
     const data = Buffer.from(encodedData, 'base64');
-    const canonicalData = data.toString('base64').replace(/=+$/, '');
-    if (canonicalData !== encodedData.replace(/=+$/, '')) {
+    const canonicalData = removeBase64Padding(data.toString('base64'));
+    if (canonicalData !== removeBase64Padding(encodedData)) {
       throw new ValidationError('Image data must be valid Base64');
     }
     if (!data.length || data.length > MAX_IMAGE_SIZE) {

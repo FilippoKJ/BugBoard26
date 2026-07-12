@@ -1,6 +1,6 @@
 import { isUserRole } from '../entities/UserRole.js';
 import { ValidationError } from '../errors/ValidationError.js';
-import { emailPattern, normalizeEmail } from '../validators/emailRules.js';
+import { isValidEmail, normalizeEmail } from '../validators/emailRules.js';
 import { isStrongPassword } from '../validators/passwordRules.js';
 
 export class CreateUserRequest {
@@ -19,7 +19,7 @@ export class CreateUserRequest {
     const password = typeof body.password === 'string' ? body.password : '';
     const role = typeof body.role === 'string' ? body.role.toUpperCase() : '';
 
-    if (!emailPattern.test(email)) {
+    if (!isValidEmail(email)) {
       throw new ValidationError('A valid email is required');
     }
 
