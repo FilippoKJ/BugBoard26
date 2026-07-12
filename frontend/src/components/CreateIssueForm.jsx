@@ -14,7 +14,16 @@ function readImage(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      const [, data = ''] = String(reader.result).split(',', 2);
+      if (typeof reader.result !== 'string') {
+        reject(new Error('Impossibile leggere l\'immagine selezionata'));
+        return;
+      }
+      const separator = reader.result.indexOf(',');
+      if (separator === -1) {
+        reject(new Error('Il contenuto dell\'immagine non è valido'));
+        return;
+      }
+      const data = reader.result.slice(separator + 1);
       resolve({ fileName: file.name, mimeType: file.type, data });
     };
     reader.onerror = () => reject(new Error('Impossibile leggere l\'immagine selezionata'));
@@ -45,14 +54,14 @@ export function CreateIssueForm({ onSubmit, onCancel }) {
     }
     try {
       setForm({ ...form, image: await readImage(file) });
-    } catch (caught) {
+    } catch (error_) {
       event.target.value = '';
-      setError(caught);
+      setError(error_);
     }
   }
   async function submit(event) {
     event.preventDefault(); setBusy(true); setError(null);
-    try { await onSubmit(form); setForm(initial); } catch (caught) { setError(caught); } finally { setBusy(false); }
+    try { await onSubmit(form); setForm(initial); } catch (error_) { setError(error_); } finally { setBusy(false); }
   }
   return (
     <form onSubmit={submit} className="panel mb-6" aria-label="Crea issue">

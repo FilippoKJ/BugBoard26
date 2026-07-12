@@ -17,7 +17,7 @@ export function IssueDetailPage() {
   const { id } = useParams(); const navigate = useNavigate(); const { client, session } = useAuth(); const api = useMemo(() => createIssueApi(client), [client]);
   const [issue, setIssue] = useState(null); const [comments, setComments] = useState([]); const [error, setError] = useState(null); const [loading, setLoading] = useState(true);
   const [imageUrl, setImageUrl] = useState(null);
-  const load = useCallback(async () => { setLoading(true); setError(null); try { const [issueResult, commentResult] = await Promise.all([api.getById(id), api.listComments(id)]); setIssue(issueResult.issue); setComments(commentResult.comments); } catch (caught) { setError(caught); } finally { setLoading(false); } }, [api, id]);
+  const load = useCallback(async () => { setLoading(true); setError(null); try { const [issueResult, commentResult] = await Promise.all([api.getById(id), api.listComments(id)]); setIssue(issueResult.issue); setComments(commentResult.comments); } catch (error_) { setError(error_); } finally { setLoading(false); } }, [api, id]);
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
     if (!issue?.image) {
