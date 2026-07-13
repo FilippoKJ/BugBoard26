@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from './App.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
+import { startVersionMonitor } from './utils/versionMonitor.js';
 import './styles.css';
 
 createRoot(document.getElementById('root')).render(
@@ -14,3 +15,7 @@ createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </StrictMode>
 );
+
+if (import.meta.env.PROD) {
+  startVersionMonitor(__BUGBOARD_BUILD_VERSION__);
+}
