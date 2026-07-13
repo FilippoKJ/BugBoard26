@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CreateIssueForm } from '../components/CreateIssueForm.jsx';
+import { Link } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState.jsx';
 import { ErrorBanner } from '../components/ErrorBanner.jsx';
 import { IssueCard } from '../components/IssueCard.jsx';
@@ -15,10 +15,9 @@ const initialFilters = { type: '', status: '', priority: '', sortBy: 'createdAt'
 export function IssueListPage() {
   useDocumentTitle('Issue');
   const { client } = useAuth(); const api = useMemo(() => createIssueApi(client), [client]);
-  const [filters, setFilters] = useState(initialFilters); const [issues, setIssues] = useState([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(null); const [creating, setCreating] = useState(false);
+  const [filters, setFilters] = useState(initialFilters); const [issues, setIssues] = useState([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(null);
   const load = useCallback(async () => { setLoading(true); setError(null); try { const result = await api.list(filters); setIssues(result.issues); } catch (error_) { setError(error_); } finally { setLoading(false); } }, [api, filters]);
   useEffect(() => { load(); }, [load]);
-  async function create(issue) { await api.create(issue); setCreating(false); await load(); }
   let content;
   if (loading) {
     content = <LoadingState label="Caricamento issue…" />;
@@ -27,5 +26,5 @@ export function IssueListPage() {
   } else {
     content = <EmptyState title="Nessuna issue corrisponde ai filtri" description="Modifica i filtri oppure crea la prima issue." />;
   }
-  return <><PageHeader eyebrow="Bacheca attiva" title="Issue del progetto" description="Filtra il lavoro aperto e apri una scheda per partecipare alla discussione." actions={<button className="btn-primary" onClick={() => setCreating((value) => !value)}>+ Nuova issue</button>} />{creating && <CreateIssueForm onSubmit={create} onCancel={() => setCreating(false)} />}<IssueFilters filters={filters} onChange={setFilters} /><ErrorBanner error={error} />{content}</>;
+  return <><PageHeader eyebrow="Bacheca attiva" title="Issue del progetto" description="Filtra il lavoro aperto e apri una scheda per partecipare alla discussione." actions={<Link className="btn-primary" to="/issues/new">+ Nuova issue</Link>} /><IssueFilters filters={filters} onChange={setFilters} /><ErrorBanner error={error} />{content}</>;
 }

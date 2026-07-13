@@ -69,9 +69,6 @@ export function CreateIssueForm({ onSubmit, onCancel }) {
       {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">{error.message}</p>}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="sm:col-span-2"><span className="label">Titolo</span><input className="field" maxLength="150" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
-        <label className="sm:col-span-2"><span className="label">Descrizione</span><textarea className="field min-h-28 resize-y" maxLength="5000" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
-        <label><span className="label">Tipo</span><select className="field" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}><option value="QUESTION">Domanda</option><option value="BUG">Bug</option><option value="DOCUMENTATION">Documentazione</option><option value="FEATURE">Funzionalità</option></select></label>
-        <label><span className="label">Priorità</span><select className="field" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}><option value="LOW">Bassa</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option><option value="CRITICAL">Critica</option></select></label>
         <label className="sm:col-span-2">
           <span className="label">Immagine (opzionale)</span>
           <input
@@ -82,6 +79,9 @@ export function CreateIssueForm({ onSubmit, onCancel }) {
           />
           <span className="mt-1.5 block text-xs text-slate-500">PNG, JPEG, WebP o GIF, massimo 3 MB.</span>
         </label>
+        <label className="sm:col-span-2"><span className="label">Descrizione</span><textarea className="field min-h-28 resize-y" maxLength="5000" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+        <label><span className="label">Tipo</span><select className="field" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}><option value="QUESTION">Domanda</option><option value="BUG">Bug</option><option value="DOCUMENTATION">Documentazione</option><option value="FEATURE">Funzionalità</option></select></label>
+        <label><span className="label">Priorità</span><select className="field" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}><option value="LOW">Bassa</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option><option value="CRITICAL">Critica</option></select></label>
       </div>
       {form.image && (
         <figure className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
