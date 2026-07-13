@@ -17,11 +17,11 @@ export function CreateIssuePage() {
   }
 
   return (
-    <>
+    <div className="mx-auto w-full max-w-4xl">
       <Link to="/issues" className="mb-5 inline-block text-sm font-bold text-brand-700">
         ← Torna alla lista
       </Link>
       <CreateIssueForm onSubmit={create} onCancel={() => navigate('/issues')} />
-    </>
+    </div>
   );
 }
