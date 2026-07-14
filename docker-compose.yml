@@ -6,6 +6,7 @@ services:
       NODE_ENV: production
       DATABASE_PATH: /data/bugboard.sqlite
       DATABASE_URL: ${DATABASE_URL:-}
+      DATABASE_MIGRATION_URL: ${DATABASE_MIGRATION_URL:-}
       JWT_SECRET: ${JWT_SECRET:-local-docker-secret-change-before-public-deployment}
       CORS_ORIGIN: http://localhost:8080
       DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:-}

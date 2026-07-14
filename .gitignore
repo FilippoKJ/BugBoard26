@@ -11,6 +11,7 @@ target/
 .scannerwork/
 *.zip
 tmp/
+.codex/
 .codex-git/
 
 # Local SQLite runtime files

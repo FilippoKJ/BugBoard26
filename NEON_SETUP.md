@@ -1,29 +1,55 @@
 # Neon PostgreSQL setup
 
-The backend supports Neon PostgreSQL in production and SQLite for local development.
+The application uses Neon PostgreSQL in deployed environments and keeps SQLite
+as a zero-configuration option for local development.
 
-## Configure Neon
+## Connection strings
 
-1. Create a project in the Neon Console.
-2. Open **Connect** and copy a pooled connection string. Its hostname contains
-   `-pooler` and the URL includes `sslmode=require`.
-3. Copy `.env.example` to `.env` and set:
+Create `.env` in the project root from `.env.example` and set:
 
-   ```dotenv
-   DATABASE_URL=postgresql://USER:PASSWORD@ENDPOINT-pooler.REGION.aws.neon.tech/neondb?sslmode=require
-   ```
+```dotenv
+# Pooled URL (hostname contains -pooler) used by the running application.
+DATABASE_URL=postgresql://USER:PASSWORD@ENDPOINT-pooler.REGION.aws.neon.tech/neondb?sslmode=require
 
-4. Keep `JWT_SECRET` and demo account passwords outside source control.
-5. Start the application with `docker compose up --build -d`.
+# Direct URL used for migrations and one-time imports. Optional but recommended.
+DATABASE_MIGRATION_URL=postgresql://USER:PASSWORD@ENDPOINT.REGION.aws.neon.tech/neondb?sslmode=require
+```
 
-On startup, the backend connects to Neon and initializes the PostgreSQL schema.
-The health endpoint reports `databaseProvider: "postgresql"` when Neon is in use.
+`DATABASE_MIGRATION_URL` falls back to `DATABASE_URL` when omitted. Never commit
+the real `.env` file. The application reports `databaseProvider: "postgresql"`
+from `/api/health` after it connects to Neon.
 
-If `DATABASE_URL` is empty, the backend keeps using the SQLite database at
-`DATABASE_PATH`. This makes local development work without a cloud dependency.
+## Versioned migrations
 
-## Existing SQLite data
+Migrations in `backend/database/migrations` are applied in filename order. The
+backend records their SHA-256 checksums in `schema_migrations`, refuses changed
+historical migrations and uses a PostgreSQL advisory lock to prevent two app
+instances from migrating concurrently.
 
-The two databases are intentionally independent. Setting `DATABASE_URL` creates
-the schema in Neon but does not upload an existing SQLite file. Export or import
-existing data separately before switching a production environment.
+The backend applies pending migrations before accepting requests. They can also
+be run explicitly. Backend commands automatically load the root `.env` and an
+optional `backend/.env` override:
+
+```powershell
+cd backend
+pnpm db:migrate
+```
+
+## Import the existing SQLite data
+
+The importer preserves IDs, users, password hashes, issues, images, comments
+and timestamps. It also closes every archived issue. For safety, it refuses to
+write if Neon already contains any application data.
+
+Run it once, before starting the app against a new Neon database:
+
+```powershell
+cd backend
+pnpm db:import-sqlite
+```
+
+The command reads `DATABASE_PATH` (or `backend/database/bugboard.sqlite`) and
+writes through `DATABASE_MIGRATION_URL`. Keep a backup of the SQLite file until
+the cloud data has been verified.
+
+When `DATABASE_URL` is empty, the backend continues to use SQLite.

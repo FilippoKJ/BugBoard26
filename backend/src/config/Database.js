@@ -1,6 +1,6 @@
-import { mkdirSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
 import pg from 'pg';
 
 const { Pool } = pg;
@@ -45,6 +45,15 @@ class DatabaseExecutor {
     return { changes: result.rowCount };
   }
 
+  async executeScript(sql) {
+    if (this.provider === 'sqlite') {
+      this.connection.exec(sql);
+      return;
+    }
+
+    await this.connection.query(sql);
+  }
+
   static toSqliteSql(sql) {
     return sql.replace(/\$\d+/g, '?');
   }
@@ -67,7 +76,10 @@ export class Database {
 
     this.databasePath = normalizedOptions.databasePath;
     this.databaseUrl = normalizedOptions.databaseUrl ?? null;
-    this.migrationPath = normalizedOptions.migrationPath;
+    this.migrationsDirectory = normalizedOptions.migrationsDirectory
+      ?? (normalizedOptions.migrationPath
+        ? dirname(normalizedOptions.migrationPath)
+        : null);
     this.connection = null;
     this.executor = null;
     this.sqliteQueue = Promise.resolve();
@@ -95,6 +107,7 @@ export class Database {
     }
 
     mkdirSync(dirname(this.databasePath), { recursive: true });
+    const { DatabaseSync } = await import('node:sqlite');
     this.connection = new DatabaseSync(this.databasePath);
     this.connection.exec('PRAGMA foreign_keys = ON;');
     this.connection.exec('PRAGMA journal_mode = WAL;');
@@ -104,18 +117,55 @@ export class Database {
     return this;
   }
 
-  async initializeSchema() {
+  async migrate() {
     this.ensureConnected();
-    const schema = readFileSync(this.migrationPath, 'utf8');
-
-    if (this.provider === 'sqlite') {
-      this.connection.exec(schema);
-      return;
+    if (!this.migrationsDirectory) {
+      throw new Error('A migrations directory is required');
     }
 
-    await this.transaction(async (transaction) => {
-      await transaction.execute(schema);
+    const migrations = this.readMigrations();
+    return this.transaction(async (transaction) => {
+      if (this.provider === 'postgresql') {
+        await transaction.queryOne(
+          'SELECT pg_advisory_xact_lock(26042026) AS locked'
+        );
+      }
+
+      await transaction.executeScript(this.migrationLedgerSchema());
+      const appliedRows = await transaction.queryAll(
+        'SELECT version, checksum FROM schema_migrations'
+      );
+      const appliedMigrations = new Map(
+        appliedRows.map((row) => [row.version, row.checksum])
+      );
+
+      let appliedCount = 0;
+      for (const migration of migrations) {
+        const previousChecksum = appliedMigrations.get(migration.version);
+        if (previousChecksum) {
+          if (previousChecksum !== migration.checksum) {
+            throw new Error(
+              `Migration ${migration.version} changed after it was applied`
+            );
+          }
+          continue;
+        }
+
+        await transaction.executeScript(migration.sql);
+        await transaction.execute(
+          `INSERT INTO schema_migrations (version, checksum)
+           VALUES ($1, $2)`,
+          [migration.version, migration.checksum]
+        );
+        appliedCount += 1;
+      }
+
+      return appliedCount;
     });
+  }
+
+  async initializeSchema() {
+    return this.migrate();
   }
 
   async queryOne(sql, parameters = []) {
@@ -210,5 +260,46 @@ export class Database {
     if (this.provider === 'sqlite') {
       await this.sqliteQueue;
     }
+  }
+
+  readMigrations() {
+    const isPostgresqlMigration = (fileName) => (
+      fileName.endsWith('.postgres.sql')
+    );
+    const files = readdirSync(this.migrationsDirectory)
+      .filter((fileName) => {
+        if (!/^\d+_[a-z0-9_]+(?:\.postgres)?\.sql$/i.test(fileName)) {
+          return false;
+        }
+        return this.provider === 'postgresql'
+          ? isPostgresqlMigration(fileName)
+          : !isPostgresqlMigration(fileName);
+      })
+      .sort((left, right) => left.localeCompare(right, 'en'));
+
+    if (!files.length) {
+      throw new Error(`No ${this.provider} migrations were found`);
+    }
+
+    return files.map((fileName) => {
+      const sql = readFileSync(
+        `${this.migrationsDirectory}/${fileName}`,
+        'utf8'
+      ).replace(/\r\n/g, '\n');
+      const version = fileName.replace(/(?:\.postgres)?\.sql$/, '');
+      const checksum = createHash('sha256').update(sql).digest('hex');
+      return { version, checksum, sql };
+    });
+  }
+
+  migrationLedgerSchema() {
+    const appliedAtType = this.provider === 'postgresql'
+      ? 'TIMESTAMPTZ'
+      : 'TEXT';
+    return `CREATE TABLE IF NOT EXISTS schema_migrations (
+      version TEXT PRIMARY KEY,
+      checksum TEXT NOT NULL,
+      applied_at ${appliedAtType} NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`;
   }
 }
