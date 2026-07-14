@@ -66,7 +66,7 @@ export function CreateIssueForm({ onSubmit, onCancel }) {
   return (
     <form onSubmit={submit} className="panel mb-6 min-w-0 p-4 sm:p-5" aria-label="Crea issue">
       <div className="mb-5 flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="text-xl font-extrabold">Nuova issue</h2><p className="text-sm text-slate-500">Descrivi un elemento da discutere con il team.</p></div><button type="button" onClick={onCancel} className="-mr-2 -mt-2 grid h-10 w-10 shrink-0 place-items-center text-2xl text-slate-400" aria-label="Chiudi">×</button></div>
-      {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">{error.message}</p>}
+      {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">{error.message}</p>}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="sm:col-span-2"><span className="label">Titolo</span><input className="field" maxLength="150" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
         <label className="sm:col-span-2">
