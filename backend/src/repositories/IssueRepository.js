@@ -1,4 +1,5 @@
 import { Issue } from '../entities/Issue.js';
+import { IssueStatus } from '../entities/IssueValues.js';
 
 const issueProjection = `
   SELECT
@@ -117,9 +118,9 @@ export class IssueRepository {
   archive(id) {
     const result = this.connection.prepare(
       `UPDATE issues
-       SET archived = 1, updated_at = CURRENT_TIMESTAMP
+       SET status = ?, archived = 1, updated_at = CURRENT_TIMESTAMP
        WHERE id = ? AND archived = 0`
-    ).run(id);
+    ).run(IssueStatus.DONE, id);
 
     return result.changes ? this.findById(id) : null;
   }

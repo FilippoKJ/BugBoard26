@@ -5,5 +5,5 @@ export const priorityLabels = {
   LOW: 'Bassa', MEDIUM: 'Media', HIGH: 'Alta', CRITICAL: 'Critica'
 };
 export const statusLabels = {
-  TODO: 'Da fare', IN_PROGRESS: 'In corso', DONE: 'Completata'
+  TODO: 'Da fare', IN_PROGRESS: 'In corso', DONE: 'Chiusa'
 };

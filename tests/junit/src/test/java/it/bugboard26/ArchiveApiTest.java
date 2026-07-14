@@ -17,6 +17,7 @@ class ArchiveApiTest {
     assertEquals(201, api.post("/issues/" + id + "/comments", user, api.json("{\"text\":\"Keep me after archive\"}")).status());
     var archived = api.patch("/issues/" + id + "/archive", admin, api.json("{}"));
     assertEquals(200, archived.status()); assertTrue(archived.body().path("issue").path("archived").asBoolean());
+    assertEquals("DONE", archived.body().path("issue").path("status").asText());
     var active = api.get("/issues", admin).body().path("issues"); var archive = api.get("/issues/archived", admin).body().path("issues");
     assertFalse(containsId(active, id)); assertTrue(containsId(archive, id));
     assertTrue(containsId(api.get("/issues/archived", user).body().path("issues"), id));
