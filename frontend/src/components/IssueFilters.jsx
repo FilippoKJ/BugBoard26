@@ -1,11 +1,11 @@
-import { issuePriorityOptions, issueStatusOptions, issueTypeOptions } from '../constants/issueOptions.js';
+import { issuePriorityOptions, issueTypeOptions } from '../constants/issueOptions.js';
 
-const options = { type: issueTypeOptions, status: issueStatusOptions, priority: issuePriorityOptions };
-const labels = { type: 'Tipologia', status: 'Stato', priority: 'Priorità' };
+const options = { type: issueTypeOptions, priority: issuePriorityOptions };
+const labels = { type: 'Tipologia', priority: 'Priorità' };
 
 export function IssueFilters({ filters, onChange }) {
   return (
-    <div className="panel mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="panel mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {Object.entries(options).map(([name, values]) => (
         <label key={name}>
           <span className="label">{labels[name]}</span>

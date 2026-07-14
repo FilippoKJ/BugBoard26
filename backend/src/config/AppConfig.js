@@ -7,6 +7,7 @@ export class AppConfig {
   constructor(environment = process.env) {
     this.port = AppConfig.parsePort(environment.PORT ?? '3000');
     this.nodeEnvironment = environment.NODE_ENV ?? 'development';
+    this.databaseUrl = AppConfig.parseDatabaseUrl(environment.DATABASE_URL);
     this.databasePath = environment.DATABASE_PATH
       ? resolve(environment.DATABASE_PATH)
       : resolve(backendRoot, 'database', 'bugboard.sqlite');
@@ -33,6 +34,20 @@ export class AppConfig {
     }
 
     return port;
+  }
+
+  static parseDatabaseUrl(value) {
+    const databaseUrl = value?.trim() ?? '';
+    if (!databaseUrl) {
+      return null;
+    }
+
+    const protocol = new URL(databaseUrl).protocol;
+    if (!['postgres:', 'postgresql:'].includes(protocol)) {
+      throw new TypeError('DATABASE_URL must be a PostgreSQL connection string');
+    }
+
+    return databaseUrl;
   }
 
   static parseDemoUser(environment, role) {

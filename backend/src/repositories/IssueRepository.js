@@ -9,13 +9,13 @@ const issueProjection = `
     issues.type,
     issues.priority,
     issues.status,
-    issues.author_id AS authorId,
-    users.email AS authorEmail,
+    issues.author_id AS "authorId",
+    users.email AS "authorEmail",
     issues.archived,
-    issues.created_at AS createdAt,
-    issues.updated_at AS updatedAt,
-    issue_images.file_name AS imageFileName,
-    issue_images.mime_type AS imageMimeType
+    issues.created_at AS "createdAt",
+    issues.updated_at AS "updatedAt",
+    issue_images.file_name AS "imageFileName",
+    issue_images.mime_type AS "imageMimeType"
   FROM issues
   JOIN users ON users.id = issues.author_id
   LEFT JOIN issue_images ON issue_images.issue_id = issues.id
@@ -31,10 +31,10 @@ END`;
 export class IssueRepository {
   constructor(database) {
     database.ensureConnected();
-    this.connection = database.connection;
+    this.database = database;
   }
 
-  create({ title, description, type, priority, authorId, image }) {
+  async create({ title, description, type, priority, authorId, image }) {
     const issue = new Issue({
       title,
       description,
@@ -42,9 +42,9 @@ export class IssueRepository {
       priority,
       authorId
     });
-    this.connection.exec('BEGIN');
-    try {
-      const result = this.connection.prepare(
+
+    return this.database.transaction(async (transaction) => {
+      const row = await transaction.queryOne(
         `INSERT INTO issues (
           title,
           description,
@@ -53,44 +53,44 @@ export class IssueRepository {
           status,
           author_id,
           archived
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        issue.title,
-        issue.description,
-        issue.type,
-        issue.priority,
-        issue.status,
-        issue.authorId,
-        Number(issue.archived)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING id`,
+        [
+          issue.title,
+          issue.description,
+          issue.type,
+          issue.priority,
+          issue.status,
+          issue.authorId,
+          issue.archived
+        ]
       );
 
-      const issueId = Number(result.lastInsertRowid);
+      const issueId = Number(row.id);
       if (image) {
-        this.connection.prepare(
+        await transaction.execute(
           `INSERT INTO issue_images (issue_id, file_name, mime_type, data)
-           VALUES (?, ?, ?, ?)`
-        ).run(issueId, image.fileName, image.mimeType, image.data);
+           VALUES ($1, $2, $3, $4)`,
+          [issueId, image.fileName, image.mimeType, image.data]
+        );
       }
 
-      this.connection.exec('COMMIT');
-      return this.findById(issueId);
-    } catch (error) {
-      this.connection.exec('ROLLBACK');
-      throw error;
-    }
+      return this.findById(issueId, transaction);
+    });
   }
 
-  findById(id) {
-    const row = this.connection
-      .prepare(`${issueProjection} WHERE issues.id = ?`)
-      .get(id);
+  async findById(id, executor = this.database) {
+    const row = await executor.queryOne(
+      `${issueProjection} WHERE issues.id = $1`,
+      [id]
+    );
 
     return IssueRepository.toEntity(row);
   }
 
-  findAll({ type, status, priority, archived = false, sortBy, sortOrder }) {
-    const conditions = ['issues.archived = ?'];
-    const parameters = [Number(archived)];
+  async findAll({ type, status, priority, archived = false, sortBy, sortOrder }) {
+    const conditions = ['issues.archived = $1'];
+    const parameters = [archived];
 
     for (const [column, value] of [
       ['issues.type', type],
@@ -98,43 +98,49 @@ export class IssueRepository {
       ['issues.priority', priority]
     ]) {
       if (value) {
-        conditions.push(`${column} = ?`);
         parameters.push(value);
+        conditions.push(`${column} = $${parameters.length}`);
       }
     }
 
     const orderExpression = sortBy === 'priority'
       ? priorityOrder
       : 'issues.created_at';
-    const rows = this.connection.prepare(
+    const rows = await this.database.queryAll(
       `${issueProjection}
        WHERE ${conditions.join(' AND ')}
-       ORDER BY ${orderExpression} ${sortOrder}, issues.id ${sortOrder}`
-    ).all(...parameters);
+       ORDER BY ${orderExpression} ${sortOrder}, issues.id ${sortOrder}`,
+      parameters
+    );
 
     return rows.map(IssueRepository.toEntity);
   }
 
-  archive(id) {
-    const result = this.connection.prepare(
+  async archive(id) {
+    const result = await this.database.execute(
       `UPDATE issues
-       SET status = ?, archived = 1, updated_at = CURRENT_TIMESTAMP
-       WHERE id = ? AND archived = 0`
-    ).run(IssueStatus.DONE, id);
+       SET status = $1, archived = TRUE, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2 AND archived = FALSE`,
+      [IssueStatus.DONE, id]
+    );
 
     return result.changes ? this.findById(id) : null;
   }
 
-  findImageByIssueId(id) {
-    return this.connection.prepare(
-      `SELECT file_name AS fileName, mime_type AS mimeType, data
+  async findImageByIssueId(id) {
+    return await this.database.queryOne(
+      `SELECT file_name AS "fileName", mime_type AS "mimeType", data
        FROM issue_images
-       WHERE issue_id = ?`
-    ).get(id) ?? null;
+       WHERE issue_id = $1`,
+      [id]
+    );
   }
 
-  count() {
-    return this.connection.prepare('SELECT COUNT(*) AS count FROM issues').get().count;
+  async count() {
+    const row = await this.database.queryOne(
+      'SELECT COUNT(*) AS count FROM issues'
+    );
+    return Number(row.count);
   }
 
   static toEntity(row) {
@@ -144,6 +150,8 @@ export class IssueRepository {
 
     return new Issue({
       ...row,
+      id: Number(row.id),
+      authorId: Number(row.authorId),
       image: row.imageFileName
         ? { fileName: row.imageFileName, mimeType: row.imageMimeType }
         : null,

@@ -3,9 +3,9 @@ export class HealthController {
     this.healthService = healthService;
   }
 
-  getStatus = (_request, response, next) => {
+  getStatus = async (_request, response, next) => {
     try {
-      response.status(200).json(this.healthService.getStatus());
+      response.status(200).json(await this.healthService.getStatus());
     } catch (error) {
       next(error);
     }

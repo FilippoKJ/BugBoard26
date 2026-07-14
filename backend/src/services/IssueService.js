@@ -6,8 +6,8 @@ export class IssueService {
     this.issueRepository = issueRepository;
   }
 
-  createIssue(title, description, type, priority, authorId, image = null) {
-    return this.issueRepository.create({
+  async createIssue(title, description, type, priority, authorId, image = null) {
+    return await this.issueRepository.create({
       title,
       description,
       type,
@@ -17,37 +17,37 @@ export class IssueService {
     });
   }
 
-  listIssues(filters) {
-    return this.issueRepository.findAll({ ...filters, archived: false });
+  async listIssues(filters) {
+    return await this.issueRepository.findAll({ ...filters, archived: false });
   }
 
-  listArchivedIssues(filters) {
-    return this.issueRepository.findAll({ ...filters, archived: true });
+  async listArchivedIssues(filters) {
+    return await this.issueRepository.findAll({ ...filters, archived: true });
   }
 
-  getIssue(id) {
-    const issue = this.issueRepository.findById(id);
+  async getIssue(id) {
+    const issue = await this.issueRepository.findById(id);
     if (!issue) {
       throw new NotFoundError('Issue');
     }
     return issue;
   }
 
-  getIssueImage(id) {
-    this.getIssue(id);
-    const image = this.issueRepository.findImageByIssueId(id);
+  async getIssueImage(id) {
+    await this.getIssue(id);
+    const image = await this.issueRepository.findImageByIssueId(id);
     if (!image) {
       throw new NotFoundError('Issue image');
     }
     return image;
   }
 
-  archiveIssue(id) {
-    const issue = this.getIssue(id);
+  async archiveIssue(id) {
+    const issue = await this.getIssue(id);
     if (issue.archived) {
       throw new ConflictError('Issue is already archived');
     }
 
-    return this.issueRepository.archive(id);
+    return await this.issueRepository.archive(id);
   }
 }

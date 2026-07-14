@@ -11,7 +11,7 @@ export class AuthService {
   }
 
   async login(email, password) {
-    const user = this.userRepository.findByEmail(email);
+    const user = await this.userRepository.findByEmail(email);
     const passwordMatches = await this.passwordHasher.verify(
       password,
       user?.passwordHash ?? NONEXISTENT_USER_HASH

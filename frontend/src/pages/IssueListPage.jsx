@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { createIssueApi } from '../api/issueApi.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 
-const initialFilters = { type: '', status: '', priority: '', sortBy: 'createdAt', sortOrder: 'desc' };
+const initialFilters = { type: '', priority: '', sortBy: 'createdAt', sortOrder: 'desc' };
 
 export function IssueListPage() {
   useDocumentTitle('Issue');

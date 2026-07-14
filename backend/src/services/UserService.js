@@ -7,11 +7,11 @@ export class UserService {
   }
 
   async createUser(email, password, role) {
-    if (this.userRepository.findByEmail(email)) {
+    if (await this.userRepository.findByEmail(email)) {
       throw new ConflictError('A user with this email already exists');
     }
 
     const passwordHash = await this.passwordHasher.hash(password);
-    return this.userRepository.create({ email, passwordHash, role });
+    return await this.userRepository.create({ email, passwordHash, role });
   }
 }

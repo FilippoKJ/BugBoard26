@@ -6,16 +6,16 @@ export class CommentService {
     this.issueService = issueService;
   }
 
-  listComments(issueId) {
-    this.issueService.getIssue(issueId);
-    return this.commentRepository.findByIssueId(issueId);
+  async listComments(issueId) {
+    await this.issueService.getIssue(issueId);
+    return await this.commentRepository.findByIssueId(issueId);
   }
 
-  addComment(issueId, text, authorId) {
-    const issue = this.issueService.getIssue(issueId);
+  async addComment(issueId, text, authorId) {
+    const issue = await this.issueService.getIssue(issueId);
     if (issue.archived) {
       throw new ConflictError('Archived issues cannot receive new comments');
     }
-    return this.commentRepository.create({ issueId, text, authorId });
+    return await this.commentRepository.create({ issueId, text, authorId });
   }
 }

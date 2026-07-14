@@ -7,10 +7,10 @@ export class IssueController {
     this.issueService = issueService;
   }
 
-  create = (request, response, next) => {
+  create = async (request, response, next) => {
     try {
       const createIssueRequest = CreateIssueRequest.from(request.body);
-      const issue = this.issueService.createIssue(
+      const issue = await this.issueService.createIssue(
         createIssueRequest.title,
         createIssueRequest.description,
         createIssueRequest.type,
@@ -24,38 +24,38 @@ export class IssueController {
     }
   };
 
-  list = (request, response, next) => {
+  list = async (request, response, next) => {
     try {
       const query = IssueQueryRequest.from(request.query);
-      const issues = this.issueService.listIssues(query);
+      const issues = await this.issueService.listIssues(query);
       response.status(200).json({ issues: issues.map((issue) => issue.toObject()) });
     } catch (error) {
       next(error);
     }
   };
 
-  listArchived = (request, response, next) => {
+  listArchived = async (request, response, next) => {
     try {
       const query = IssueQueryRequest.from(request.query);
-      const issues = this.issueService.listArchivedIssues(query);
+      const issues = await this.issueService.listArchivedIssues(query);
       response.status(200).json({ issues: issues.map((issue) => issue.toObject()) });
     } catch (error) {
       next(error);
     }
   };
 
-  getById = (request, response, next) => {
+  getById = async (request, response, next) => {
     try {
-      const issue = this.issueService.getIssue(parsePositiveId(request.params.id));
+      const issue = await this.issueService.getIssue(parsePositiveId(request.params.id));
       response.status(200).json({ issue: issue.toObject() });
     } catch (error) {
       next(error);
     }
   };
 
-  getImage = (request, response, next) => {
+  getImage = async (request, response, next) => {
     try {
-      const image = this.issueService.getIssueImage(
+      const image = await this.issueService.getIssueImage(
         parsePositiveId(request.params.id)
       );
       response
@@ -69,9 +69,9 @@ export class IssueController {
     }
   };
 
-  archive = (request, response, next) => {
+  archive = async (request, response, next) => {
     try {
-      const issue = this.issueService.archiveIssue(parsePositiveId(request.params.id));
+      const issue = await this.issueService.archiveIssue(parsePositiveId(request.params.id));
       response.status(200).json({ issue: issue.toObject() });
     } catch (error) {
       next(error);

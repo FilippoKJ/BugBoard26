@@ -4,52 +4,57 @@ const userProjection = `
   SELECT
     id,
     email,
-    password_hash AS passwordHash,
+    password_hash AS "passwordHash",
     role,
-    created_at AS createdAt
+    created_at AS "createdAt"
   FROM users
 `;
 
 export class UserRepository {
   constructor(database) {
     database.ensureConnected();
-    this.connection = database.connection;
+    this.database = database;
   }
 
-  create({ email, passwordHash, role }) {
+  async create({ email, passwordHash, role }) {
     const user = new User({ email, passwordHash, role });
-    const result = this.connection
-      .prepare(
-        `INSERT INTO users (email, password_hash, role)
-         VALUES (?, ?, ?)`
-      )
-      .run(user.email, user.passwordHash, user.role);
+    const row = await this.database.queryOne(
+      `INSERT INTO users (email, password_hash, role)
+       VALUES ($1, $2, $3)
+       RETURNING id`,
+      [user.email, user.passwordHash, user.role]
+    );
 
-    return this.findById(Number(result.lastInsertRowid));
+    return this.findById(Number(row.id));
   }
 
-  findById(id) {
-    const row = this.connection
-      .prepare(`${userProjection} WHERE id = ?`)
-      .get(id);
+  async findById(id) {
+    const row = await this.database.queryOne(
+      `${userProjection} WHERE id = $1`,
+      [id]
+    );
 
     return UserRepository.toEntity(row);
   }
 
-  findByEmail(email) {
+  async findByEmail(email) {
     const normalizedEmail = User.normalizeEmail(email);
-    const row = this.connection
-      .prepare(`${userProjection} WHERE email = ?`)
-      .get(normalizedEmail);
+    const row = await this.database.queryOne(
+      `${userProjection} WHERE email = $1`,
+      [normalizedEmail]
+    );
 
     return UserRepository.toEntity(row);
   }
 
-  count() {
-    return this.connection.prepare('SELECT COUNT(*) AS count FROM users').get().count;
+  async count() {
+    const row = await this.database.queryOne(
+      'SELECT COUNT(*) AS count FROM users'
+    );
+    return Number(row.count);
   }
 
   static toEntity(row) {
-    return row ? new User(row) : null;
+    return row ? new User({ ...row, id: Number(row.id) }) : null;
   }
 }

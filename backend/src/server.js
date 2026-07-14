@@ -16,14 +16,21 @@ import { UserService } from './services/UserService.js';
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const config = new AppConfig();
+const migrationFile = config.databaseUrl
+  ? '001_initial_schema.postgres.sql'
+  : '001_initial_schema.sql';
 const migrationPath = resolve(
   currentDirectory,
-  '../database/migrations/001_initial_schema.sql'
+  `../database/migrations/${migrationFile}`
 );
-const database = new Database(config.databasePath, migrationPath);
+const database = new Database({
+  databasePath: config.databasePath,
+  databaseUrl: config.databaseUrl,
+  migrationPath
+});
 
-database.connect();
-database.initializeSchema();
+await database.connect();
+await database.initializeSchema();
 
 const userRepository = new UserRepository(database);
 const issueRepository = new IssueRepository(database);
@@ -59,8 +66,8 @@ const server = app.listen(config.port, () => {
 
 function shutDown(signal) {
   console.log(`${signal} received, shutting down`);
-  server.close(() => {
-    database.close();
+  server.close(async () => {
+    await database.close();
     process.exit(0);
   });
 }

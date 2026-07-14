@@ -8,14 +8,14 @@ export class DemoUserSeeder {
     let createdUsers = 0;
 
     for (const account of accounts) {
-      const existingUser = this.userRepository.findByEmail(account.email);
+      const existingUser = await this.userRepository.findByEmail(account.email);
 
       if (existingUser) {
         continue;
       }
 
       const passwordHash = await this.passwordHasher.hash(account.password);
-      this.userRepository.create({
+      await this.userRepository.create({
         email: account.email,
         passwordHash,
         role: account.role
