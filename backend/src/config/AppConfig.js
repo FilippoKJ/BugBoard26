@@ -8,9 +8,17 @@ export class AppConfig {
     this.port = AppConfig.parsePort(environment.PORT ?? '3000');
     this.nodeEnvironment = environment.NODE_ENV ?? 'development';
     this.databaseUrl = AppConfig.parseDatabaseUrl(environment.DATABASE_URL);
+    const configuredMigrationUrl = AppConfig.parseDatabaseUrl(
+      environment.DATABASE_MIGRATION_URL
+    );
+    if (configuredMigrationUrl && !this.databaseUrl) {
+      throw new Error('DATABASE_MIGRATION_URL requires DATABASE_URL');
+    }
+    this.databaseMigrationUrl = configuredMigrationUrl ?? this.databaseUrl;
     this.databasePath = environment.DATABASE_PATH
       ? resolve(environment.DATABASE_PATH)
       : resolve(backendRoot, 'database', 'bugboard.sqlite');
+    this.migrationsDirectory = resolve(backendRoot, 'database', 'migrations');
     this.jwtSecret = environment.JWT_SECRET
       ?? 'bugboard26-development-only-secret-change-before-production';
     this.jwtExpiresIn = environment.JWT_EXPIRES_IN ?? '1h';

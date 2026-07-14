@@ -68,6 +68,11 @@ describe('IssueRepository.archive(id)', () => {
        WHERE id = $1`,
       [legacyIssue.id]
     );
+    await database.execute(
+      `DELETE FROM schema_migrations
+       WHERE version = $1`,
+      ['002_close_archived_issues']
+    );
 
     await database.initializeSchema();
 
@@ -75,5 +80,17 @@ describe('IssueRepository.archive(id)', () => {
       .resolves.toMatchObject({ status: 'DONE' });
     await expect(repository.findById(activeIssue.id))
       .resolves.toMatchObject({ status: 'TODO' });
+  });
+
+  it('records each migration once', async () => {
+    await expect(database.initializeSchema()).resolves.toBe(0);
+
+    const migrations = await database.queryAll(
+      'SELECT version FROM schema_migrations ORDER BY version'
+    );
+    expect(migrations).toEqual([
+      { version: '001_initial_schema' },
+      { version: '002_close_archived_issues' }
+    ]);
   });
 });

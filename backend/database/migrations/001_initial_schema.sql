@@ -47,10 +47,6 @@ CREATE TABLE IF NOT EXISTS issue_images (
     FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE
 );
 
-UPDATE issues
-SET status = 'DONE', updated_at = CURRENT_TIMESTAMP
-WHERE archived = 1 AND status <> 'DONE';
-
 CREATE INDEX IF NOT EXISTS idx_issues_archived ON issues(archived);
 CREATE INDEX IF NOT EXISTS idx_issues_filters
     ON issues(type, status, priority);

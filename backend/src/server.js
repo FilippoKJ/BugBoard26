@@ -1,8 +1,7 @@
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { AppConfig } from './config/AppConfig.js';
 import { Database } from './config/Database.js';
+import { runDatabaseMigrations } from './config/runDatabaseMigrations.js';
 import { IssueRepository } from './repositories/IssueRepository.js';
 import { CommentRepository } from './repositories/CommentRepository.js';
 import { UserRepository } from './repositories/UserRepository.js';
@@ -14,23 +13,15 @@ import { CommentService } from './services/CommentService.js';
 import { PasswordHasher } from './services/PasswordHasher.js';
 import { UserService } from './services/UserService.js';
 
-const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const config = new AppConfig();
-const migrationFile = config.databaseUrl
-  ? '001_initial_schema.postgres.sql'
-  : '001_initial_schema.sql';
-const migrationPath = resolve(
-  currentDirectory,
-  `../database/migrations/${migrationFile}`
-);
+await runDatabaseMigrations(config);
+
 const database = new Database({
   databasePath: config.databasePath,
-  databaseUrl: config.databaseUrl,
-  migrationPath
+  databaseUrl: config.databaseUrl
 });
 
 await database.connect();
-await database.initializeSchema();
 
 const userRepository = new UserRepository(database);
 const issueRepository = new IssueRepository(database);
